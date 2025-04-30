@@ -1,8 +1,56 @@
 org 0x7C00
 bits 16
 
+%define ENDL 0x0D, 0x0A
+
+start:
+    jmp main
+
+
+
+;
+; Prints the string at the given address to the screen
+; Params:
+;   - ds:si points to string
+;
+puts:
+    push si
+    push ax
+
+.loop:
+    lodsb
+    or al, al
+    jz .done
+    mov ah, 0x0E ; teletype output
+    mov bh, 0 ; page number
+    int 0x10 ; BIOS interrupt to print character
+
+    jmp .loop
+
+.done:
+    pop ax
+    pop si
+    ret
+
+; This is a simple bootloader that does nothing but halt the CPU.
 main:
+
+    ; setup data segments
+    mov ax, 0 ; can't write to ds/es directory
+    mov ds, ax
+    mov es, ax
+
+    ; setup stack (FIFO), we need to set up a stack pointer for the program
+    mov ss, ax
+    mov sp, 0x7C00 ; stack pointer at the top of the boot sector
+
+    mov si, msg_hello ; load the address of the message into si
+    call puts ; call the puts function to print the message
+
+
     hlt
+
+msg_hello: db 'Hello, Ahmed!', ENDL, 0
 
 .halt:
     jmp .halt
